@@ -1,0 +1,3 @@
+variable "identifier" {
+  type = string
+}
