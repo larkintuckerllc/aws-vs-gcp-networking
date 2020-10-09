@@ -53,7 +53,7 @@ resource "google_compute_firewall" "allow-http-target-frontend" {
     ]
     protocol = "tcp"
   }
-  name     = "allow-ssh-target-frontend"
+  name     = "allow-http-target-frontend"
   network  = google_compute_network.this.name
   priority = 1000
   target_tags = [
