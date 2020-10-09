@@ -33,3 +33,10 @@ resource "google_compute_firewall" "default-allow-ssh-bastion" {
 }
 
 # TODO: FIREWALL INTERNAL
+
+resource "google_compute_subnetwork" "us-central1" {
+  ip_cidr_range = "10.128.0.0/20"
+  name          = "us-central1"
+  network       = google_compute_network.this.id
+  region        = "us-central1"
+}
