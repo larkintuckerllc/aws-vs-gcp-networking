@@ -1,20 +1,7 @@
 resource "google_compute_network" "this" {
   auto_create_subnetworks = false
-  delete_default_routes_on_create = true
   name                    = var.identifier
   routing_mode            = "REGIONAL"
-}
-
-resource "google_compute_route" "default-route-public" {
-  description      = "Default route to the Internet."
-  dest_range       = "0.0.0.0/0"
-  name             = "default-route-public"
-  network          = google_compute_network.this.name
-  next_hop_gateway = "default-internet-gateway"
-  priority         = 1000
-  tags = [
-    "public"
-  ]
 }
 
 resource "google_compute_firewall" "allow-ssh-target-bastion" {
@@ -99,6 +86,20 @@ resource "google_compute_subnetwork" "us-central1" {
   region        = "us-central1"
 }
 
+resource "google_compute_router" "us-central1" {
+  name    = "us-central1-${var.identifier}"
+  network = google_compute_network.this.id
+  region  = google_compute_subnetwork.us-central1.region
+}
+
+resource "google_compute_router_nat" "us-central1" {
+  name                               = "us-central1-${var.identifier}"
+  nat_ip_allocate_option             = "AUTO_ONLY"
+  router                             = google_compute_router.us-central1.name
+  region                             = google_compute_router.us-central1.region
+  source_subnetwork_ip_ranges_to_nat = "ALL_SUBNETWORKS_ALL_IP_RANGES"
+}
+
 resource "google_compute_instance" "this" {
   boot_disk {
     initialize_params {
@@ -115,8 +116,7 @@ resource "google_compute_instance" "this" {
     subnetwork = google_compute_subnetwork.us-central1.name
   }
   tags = [
-    "bastion",
-    "public"
+    "bastion"
   ]
   zone         = "us-central1-a"
 }
