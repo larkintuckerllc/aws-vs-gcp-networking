@@ -74,6 +74,24 @@ resource "google_compute_firewall" "allow-http-target-frontend" {
   ]
 }
 
+resource "google_compute_firewall" "allow-http-target-backend" {
+  allow {
+    ports = [
+      "80"
+    ]
+    protocol = "tcp"
+  }
+  name     = "allow-http-target-backend"
+  network  = google_compute_network.this.name
+  priority = 1000
+  source_tags = [
+    "frontend"
+  ]
+  target_tags = [
+    "backend"
+  ]
+}
+
 resource "google_compute_subnetwork" "us-central1" {
   ip_cidr_range = "10.128.0.0/20"
   name          = "us-central1"
