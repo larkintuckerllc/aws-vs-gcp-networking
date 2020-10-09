@@ -59,6 +59,21 @@ resource "google_compute_firewall" "allow-ssh-source-bastion" {
   ]
 }
 
+resource "google_compute_firewall" "allow-http-target-frontend" {
+  allow {
+    ports = [
+      "80"
+    ]
+    protocol = "tcp"
+  }
+  name     = "allow-ssh-target-frontend"
+  network  = google_compute_network.this.name
+  priority = 1000
+  target_tags = [
+    "frontend"
+  ]
+}
+
 resource "google_compute_subnetwork" "us-central1" {
   ip_cidr_range = "10.128.0.0/20"
   name          = "us-central1"
