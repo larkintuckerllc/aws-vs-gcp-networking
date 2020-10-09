@@ -156,3 +156,85 @@ resource "aws_network_acl" "this" {
   }
   vpc_id     = aws_vpc.this.id
 }
+
+resource "aws_security_group" "egress" {
+  egress {
+    cidr_blocks = ["0.0.0.0/0"]
+    from_port   = 0
+    protocol    = "-1"
+    to_port     = 0
+  }
+  tags = {
+    Infrastructure = var.identifier
+    Name           = "${var.identifier}-egress"
+  }
+  vpc_id = aws_vpc.this.id
+}
+
+resource "aws_security_group" "bastion" {
+  ingress {
+    cidr_blocks = ["0.0.0.0/0"]
+    from_port   = 22
+    protocol    = "tcp"
+    to_port     = 22
+  }
+  tags = {
+    Infrastructure = var.identifier
+    Name           = "${var.identifier}-bastion"
+  }
+  vpc_id = aws_vpc.this.id
+}
+
+resource "aws_security_group" "frontend" {
+  ingress {
+    cidr_blocks = ["0.0.0.0/0"]
+    from_port   = 80
+    protocol    = "tcp"
+    to_port     = 80
+  }
+  tags = {
+    Infrastructure = var.identifier
+    Name           = "${var.identifier}-frontend"
+  }
+  vpc_id = aws_vpc.this.id
+}
+
+resource "aws_security_group" "instance" {
+  ingress {
+    from_port = -1
+    protocol = "icmp"
+    security_groups = [
+      aws_security_group.bastion.id
+    ]
+    to_port   = -1
+  }
+  ingress {
+    from_port = 22
+    protocol  = "tcp"
+    security_groups = [
+      aws_security_group.bastion.id
+    ]
+    to_port   = 22
+  }
+  tags = {
+    Infrastructure = var.identifier
+    Name           = "${var.identifier}-instance"
+  }
+  vpc_id = aws_vpc.this.id
+}
+
+resource "aws_security_group" "backend" {
+  ingress {
+    from_port = 80
+    protocol  = "tcp"
+    security_groups = [
+      aws_security_group.frontend.id
+    ]
+    to_port   = 80
+  }
+  tags = {
+    Infrastructure = var.identifier
+    Name           = "${var.identifier}-backend"
+  }
+  vpc_id = aws_vpc.this.id
+}
