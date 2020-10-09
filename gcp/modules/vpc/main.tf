@@ -17,22 +17,47 @@ resource "google_compute_route" "default-route-public" {
   ]
 }
 
-resource "google_compute_firewall" "default-allow-ssh-bastion" {
+resource "google_compute_firewall" "allow-ssh-target-bastion" {
   allow {
     ports = [
       "22"
     ]
     protocol = "tcp"
   }
-  name     = "default-allow-ssh-bastion"
+  name     = "allow-ssh-target-bastion"
   network  = google_compute_network.this.name
-  priority = 65534
+  priority = 1000
   target_tags = [
     "bastion"
   ]
 }
 
-# TODO: FIREWALL INTERNAL
+resource "google_compute_firewall" "allow-icmp-source-bastion" {
+  allow {
+    protocol = "icmp"
+  }
+  name     = "allow-icmp-source-bastion"
+  network  = google_compute_network.this.name
+  priority = 1000
+  source_tags = [
+    "bastion"
+  ]
+}
+
+resource "google_compute_firewall" "allow-ssh-source-bastion" {
+  allow {
+    ports = [
+      "22"
+    ]
+    protocol = "tcp"
+  }
+  name     = "allow-ssh-source-bastion"
+  network  = google_compute_network.this.name
+  priority = 1000
+  source_tags = [
+    "bastion"
+  ]
+}
 
 resource "google_compute_subnetwork" "us-central1" {
   ip_cidr_range = "10.128.0.0/20"
