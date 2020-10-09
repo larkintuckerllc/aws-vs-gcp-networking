@@ -25,6 +25,19 @@ locals {
   vpc_cidr_block = "172.16.0.0/16"
 }
 
+data "aws_ami" "ubuntu" {
+  filter {
+    name   = "name"
+    values = ["ubuntu/images/hvm-ssd/ubuntu-bionic-18.04-amd64-server-*"]
+  }
+  filter {
+    name   = "virtualization-type"
+    values = ["hvm"]
+  }
+  most_recent = true
+  owners = ["099720109477"]
+}
+
 # VPC
 
 resource "aws_vpc" "this" {
@@ -157,6 +170,8 @@ resource "aws_network_acl" "this" {
   vpc_id     = aws_vpc.this.id
 }
 
+# SECURITY GROUPS
+
 resource "aws_security_group" "egress" {
   egress {
     cidr_blocks = ["0.0.0.0/0"]
@@ -164,6 +179,7 @@ resource "aws_security_group" "egress" {
     protocol    = "-1"
     to_port     = 0
   }
+  name   = "${var.identifier}-egress"
   tags = {
     Infrastructure = var.identifier
     Name           = "${var.identifier}-egress"
@@ -178,6 +194,7 @@ resource "aws_security_group" "bastion" {
     protocol    = "tcp"
     to_port     = 22
   }
+  name   = "${var.identifier}-bastion"
   tags = {
     Infrastructure = var.identifier
     Name           = "${var.identifier}-bastion"
@@ -192,6 +209,7 @@ resource "aws_security_group" "frontend" {
     protocol    = "tcp"
     to_port     = 80
   }
+  name   = "${var.identifier}-frontend"
   tags = {
     Infrastructure = var.identifier
     Name           = "${var.identifier}-frontend"
@@ -216,6 +234,7 @@ resource "aws_security_group" "instance" {
     ]
     to_port   = 22
   }
+  name   = "${var.identifier}-instance"
   tags = {
     Infrastructure = var.identifier
     Name           = "${var.identifier}-instance"
@@ -232,9 +251,28 @@ resource "aws_security_group" "backend" {
     ]
     to_port   = 80
   }
+  name   = "${var.identifier}-backend"
   tags = {
     Infrastructure = var.identifier
     Name           = "${var.identifier}-backend"
   }
   vpc_id = aws_vpc.this.id
+}
+
+# BASTION
+
+resource "aws_instance" "this" {
+  ami                     = data.aws_ami.ubuntu.id
+  instance_type           = "t2.micro"
+  key_name                = "ubuntu_laptop"
+  subnet_id               = aws_subnet.public[0].id
+  vpc_security_group_ids = [
+    aws_security_group.bastion.id,
+    aws_security_group.egress.id,
+    aws_security_group.instance.id
+  ]
+  tags = {
+    Infrastructure = var.identifier
+    Name           = "${var.identifier}-bastion"
+  }
 }
