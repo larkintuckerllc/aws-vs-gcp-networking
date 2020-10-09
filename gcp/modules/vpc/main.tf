@@ -40,3 +40,25 @@ resource "google_compute_subnetwork" "us-central1" {
   network       = google_compute_network.this.id
   region        = "us-central1"
 }
+
+resource "google_compute_instance" "this" {
+  boot_disk {
+    initialize_params {
+      image = "debian-cloud/debian-10"
+    }
+  }
+  machine_type = "e2-micro"
+  name         = "bastion-${var.identifier}"
+  network_interface {
+    access_config {
+        network_tier = "STANDARD"
+    }
+    network    = google_compute_network.this.name
+    subnetwork = google_compute_subnetwork.us-central1.name
+  }
+  tags = [
+    "bastion",
+    "public"
+  ]
+  zone         = "us-central1-a"
+}
